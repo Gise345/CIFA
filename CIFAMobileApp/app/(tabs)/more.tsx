@@ -1,8 +1,9 @@
+// CIFAMobileApp/app/(tabs)/more.tsx
 import React from 'react';
 import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import Header from '../../src/components/common/Header';
-import { User, Bell, Heart, Settings, FileText, Shield, Video, Award } from "lucide-react-native";
 
 export default function MoreScreen() {
   return (
@@ -13,12 +14,12 @@ export default function MoreScreen() {
           <Text style={styles.sectionHeader}>ACCOUNT</Text>
           
           <TouchableOpacity style={styles.menuItem}>
-            <User size={20} color="#2563eb" style={styles.menuIcon} />
+            <Feather name="user" size={20} color="#2563eb" style={styles.menuIcon} />
             <Text style={styles.menuText}>Team Login</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.menuItem}>
-            <Bell size={20} color="#2563eb" style={styles.menuIcon} />
+            <Feather name="bell" size={20} color="#2563eb" style={styles.menuIcon} />
             <Text style={styles.menuText}>Notification Settings</Text>
           </TouchableOpacity>
         </View>
@@ -27,17 +28,17 @@ export default function MoreScreen() {
           <Text style={styles.sectionHeader}>APP</Text>
           
           <TouchableOpacity style={styles.menuItem}>
-            <Heart size={20} color="#2563eb" style={styles.menuIcon} />
+            <Feather name="heart" size={20} color="#2563eb" style={styles.menuIcon} />
             <Text style={styles.menuText}>Favorite Teams</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.menuItem}>
-            <Settings size={20} color="#2563eb" style={styles.menuIcon} />
+            <Feather name="settings" size={20} color="#2563eb" style={styles.menuIcon} />
             <Text style={styles.menuText}>App Settings</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.menuItem}>
-            <FileText size={20} color="#2563eb" style={styles.menuIcon} />
+            <Feather name="file-text" size={20} color="#2563eb" style={styles.menuIcon} />
             <Text style={styles.menuText}>Terms & Privacy Policy</Text>
           </TouchableOpacity>
         </View>
@@ -46,17 +47,17 @@ export default function MoreScreen() {
           <Text style={styles.sectionHeader}>ABOUT</Text>
           
           <TouchableOpacity style={styles.menuItem}>
-            <Shield size={20} color="#2563eb" style={styles.menuIcon} />
+            <Feather name="shield" size={20} color="#2563eb" style={styles.menuIcon} />
             <Text style={styles.menuText}>About CIFA</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.menuItem}>
-            <Video size={20} color="#2563eb" style={styles.menuIcon} />
+            <Feather name="video" size={20} color="#2563eb" style={styles.menuIcon} />
             <Text style={styles.menuText}>Football TV</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.menuItem}>
-            <Award size={20} color="#2563eb" style={styles.menuIcon} />
+            <Feather name="award" size={20} color="#2563eb" style={styles.menuIcon} />
             <Text style={styles.menuText}>Contact Us</Text>
           </TouchableOpacity>
         </View>
