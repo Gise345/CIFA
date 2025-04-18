@@ -9,7 +9,9 @@ import {
     addDoc, 
     updateDoc, 
     deleteDoc,
-    orderBy
+    orderBy,
+    CollectionReference,
+    DocumentData
   } from 'firebase/firestore';
   import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
   import { firestore, storage } from './config';
@@ -47,29 +49,30 @@ import {
    */
   export const getTeams = async (type?: string, division?: string): Promise<Team[]> => {
     try {
-      let teamsQuery = collection(firestore, 'teams');
+      const teamsCollection = collection(firestore, 'teams') as CollectionReference<DocumentData>;
+      let teamsQuery;
       
       if (type && division) {
         teamsQuery = query(
-          teamsQuery, 
+          teamsCollection, 
           where('type', '==', type),
           where('division', '==', division),
           orderBy('name')
         );
       } else if (type) {
         teamsQuery = query(
-          teamsQuery, 
+          teamsCollection, 
           where('type', '==', type),
           orderBy('name')
         );
       } else if (division) {
         teamsQuery = query(
-          teamsQuery, 
+          teamsCollection, 
           where('division', '==', division),
           orderBy('name')
         );
       } else {
-        teamsQuery = query(teamsQuery, orderBy('name'));
+        teamsQuery = query(teamsCollection, orderBy('name'));
       }
       
       const snapshot = await getDocs(teamsQuery);
@@ -110,8 +113,9 @@ import {
    */
   export const getTeamPlayers = async (teamId: string): Promise<Player[]> => {
     try {
+      const playersCollection = collection(firestore, 'players');
       const playersQuery = query(
-        collection(firestore, 'players'),
+        playersCollection,
         where('teamId', '==', teamId),
         orderBy('number')
       );

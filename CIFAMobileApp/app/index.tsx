@@ -2,9 +2,7 @@
 import { Redirect } from 'expo-router';
 
 export default function Index() {
-  // If the user is authenticated, redirect to the home tab
-  // otherwise redirect to the login screen
-  const isAuthenticated = false;
-  
-  return isAuthenticated ? <Redirect href="/(tabs)" /> : <Redirect href="/(auth)/login" />;
+  // Send all users directly to the home tab
+  // Staff will still be able to access login from the "More" tab
+  return <Redirect href="/(tabs)" />;
 }

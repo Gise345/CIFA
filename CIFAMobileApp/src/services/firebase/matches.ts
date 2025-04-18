@@ -75,6 +75,8 @@ import {
       away: number;
     };
     featured?: boolean;
+    // Add a teams array for Firestore querying
+    teams?: string[];
   }
   
   /**
@@ -273,7 +275,10 @@ import {
         if (currentMatch) {
           const homeTeamId = matchData.homeTeamId || currentMatch.homeTeamId;
           const awayTeamId = matchData.awayTeamId || currentMatch.awayTeamId;
-          updateData.teams = [homeTeamId, awayTeamId];
+          updateData = {
+            ...updateData,
+            teams: [homeTeamId, awayTeamId]
+          };
         }
       }
       

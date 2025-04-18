@@ -1,65 +1,89 @@
 // CIFAMobileApp/src/components/home/FeaturedMatch.tsx
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
-import TeamLogo from '../common/TeamLogo';
+
+interface TeamProps {
+  id: string;
+  name: string;
+  code: string;
+  logo?: string;
+  primaryColor: string;
+}
 
 interface FeaturedMatchProps {
   onPress?: () => void;
+  viewDetailsLabel?: string;
 }
 
-const FeaturedMatch: React.FC<FeaturedMatchProps> = ({ onPress }) => {
+const FeaturedMatch: React.FC<FeaturedMatchProps> = ({ 
+  onPress,
+  viewDetailsLabel = "View details" 
+}) => {
   // This would come from Firebase in production
   const matchData = {
     id: 'match001',
     homeTeam: {
-      id: 'national',
-      name: 'Cayman',
-      code: 'CAY',
-      primaryColor: '#ef4444',
+      id: 'elite',
+      name: 'Elite SC',
+      code: 'ELT',
+      primaryColor: '#065f46',
     },
     awayTeam: {
-      id: 'jamaica',
-      name: 'Jamaica',
-      code: 'JAM',
-      primaryColor: '#eab308',
+      id: 'future',
+      name: 'Future SC',
+      code: 'FSC',
+      primaryColor: '#b45309',
     },
-    time: '7:30 PM',
-    date: 'TODAY',
+    time: '19:30',
+    date: 'Wed 1 May',
+    competition: "MEN'S PREMIER LEAGUE",
+    venue: 'Truman Bodden Sports Complex',
     notification: 'Starting lineup announced',
   };
 
+  // Team logo component
+  const TeamLogo: React.FC<{ team: TeamProps }> = ({ team }) => (
+    <View style={styles.teamContainer}>
+      <View style={styles.logoOuterContainer}>
+        <View 
+          style={[
+            styles.logoInnerContainer, 
+            { backgroundColor: team.primaryColor }
+          ]}
+        >
+          <Text style={styles.teamCode}>{team.code}</Text>
+        </View>
+      </View>
+      <Text style={styles.teamName}>{team.name}</Text>
+    </View>
+  );
+
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={['#C41E3A', '#191970', '#041E42']} // Dark blue to purple gradient
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.container}
+    >
       <Text style={styles.featuredText}>FEATURED MATCH • {matchData.date}</Text>
       
       <View style={styles.matchContainer}>
-        <View style={styles.teamContainer}>
-          <TeamLogo 
-            teamId={matchData.homeTeam.id}
-            teamName={matchData.homeTeam.name}
-            teamCode={matchData.homeTeam.code}
-            size="medium"
-            showName={true}
-            colorPrimary={matchData.homeTeam.primaryColor}
-          />
-        </View>
+        <TeamLogo team={matchData.homeTeam as TeamProps} />
         
         <View style={styles.scoreContainer}>
           <Text style={styles.vsText}>VS</Text>
           <Text style={styles.timeText}>{matchData.time}</Text>
         </View>
         
-        <View style={styles.teamContainer}>
-          <TeamLogo 
-            teamId={matchData.awayTeam.id}
-            teamName={matchData.awayTeam.name}
-            teamCode={matchData.awayTeam.code}
-            size="medium"
-            showName={true}
-            colorPrimary={matchData.awayTeam.primaryColor}
-          />
-        </View>
+        <TeamLogo team={matchData.awayTeam as TeamProps} />
+      </View>
+      
+      <View style={styles.actionContainer}>
+        <TouchableOpacity style={styles.viewButton} onPress={onPress}>
+          <Text style={styles.viewButtonText}>{viewDetailsLabel}</Text>
+        </TouchableOpacity>
       </View>
       
       <View style={styles.notificationBanner}>
@@ -67,51 +91,98 @@ const FeaturedMatch: React.FC<FeaturedMatchProps> = ({ onPress }) => {
           <Feather name="bell" size={14} color="white" style={styles.notificationIcon} />
           <Text style={styles.notificationText}>{matchData.notification}</Text>
         </View>
-        <TouchableOpacity style={styles.viewButton} onPress={onPress}>
-          <Text style={styles.viewButtonText}>View</Text>
+        <TouchableOpacity style={styles.viewSmallButton} onPress={onPress}>
+          <Text style={styles.viewSmallButtonText}>View</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#2563eb',
-    padding: 12,
+    padding: 16,
+    margin: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   featuredText: {
     color: 'white',
     fontSize: 12,
     fontWeight: '500',
-    marginBottom: 4,
+    marginBottom: 12,
   },
   matchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 8,
+    marginVertical: 12,
   },
   teamContainer: {
     alignItems: 'center',
+  },
+  logoOuterContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  logoInnerContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  teamCode: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  teamName: {
+    color: 'white',
+    fontSize: 12,
   },
   scoreContainer: {
     alignItems: 'center',
   },
   vsText: {
     color: 'white',
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   timeText: {
     color: 'white',
-    fontSize: 12,
+    fontSize: 14,
+    marginTop: 4,
+  },
+  actionContainer: {
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  viewButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  viewButtonText: {
+    color: '#FFD1E3', // Light pink
+    fontSize: 14,
+    fontWeight: '500',
   },
   notificationBanner: {
-    backgroundColor: '#1d4ed8',
-    borderRadius: 4,
-    padding: 4,
-    marginTop: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 8,
+    padding: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -121,20 +192,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   notificationIcon: {
-    marginRight: 4,
+    marginRight: 6,
   },
   notificationText: {
     color: 'white',
     fontSize: 12,
   },
-  viewButton: {
-    backgroundColor: 'white',
+  viewSmallButton: {
+    backgroundColor: '#FFD1E3', // Light pink
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
   },
-  viewButtonText: {
-    color: '#2563eb',
+  viewSmallButtonText: {
+    color: '#3a0ca3', // Deep purple
     fontSize: 12,
     fontWeight: '500',
   },

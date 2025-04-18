@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: '#2563eb',
+    // backgroundColor: '#C41E3A', // Updated to midnight blue #191970
     paddingVertical: 12,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   logoText: {
-    color: '#2563eb',
+    color: '#191970', // Updated to match header background
     fontSize: 18,
     fontWeight: 'bold',
   },

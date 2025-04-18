@@ -14,7 +14,7 @@ const NewsList: React.FC<NewsListProps> = ({ onViewAll }) => {
     id: 'news1',
     title: 'Cayman Islands Announces Squad for World Cup Qualifiers',
     category: 'NATIONAL TEAM',
-    image: '/path/to/image',
+    image: require('../../../assets/images/grey-air.jpg'),
     timeAgo: '2 hours ago',
   };
 

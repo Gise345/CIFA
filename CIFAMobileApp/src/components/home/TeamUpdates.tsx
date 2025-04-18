@@ -1,5 +1,7 @@
+// CIFAMobileApp/src/components/home/TeamUpdates.tsx
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface TeamStory {
   id: string;
@@ -18,7 +20,7 @@ const TeamUpdates: React.FC = () => {
       teamId: 'national',
       teamName: 'National',
       teamCode: 'CAY',
-      colorPrimary: '#ef4444',
+      colorPrimary: '#C41E3A',
       hasUnreadUpdates: true,
     },
     {
@@ -26,7 +28,7 @@ const TeamUpdates: React.FC = () => {
       teamId: 'scholars',
       teamName: 'Scholars',
       teamCode: 'SCH',
-      colorPrimary: '#1e40af',
+      colorPrimary: '#C41E3A',
       hasUnreadUpdates: true,
     },
     {
@@ -34,7 +36,7 @@ const TeamUpdates: React.FC = () => {
       teamId: 'elite',
       teamName: 'Elite SC',
       teamCode: 'ELT',
-      colorPrimary: '#15803d',
+      colorPrimary: '#0A1172',
       hasUnreadUpdates: true,
     },
     {
@@ -42,7 +44,7 @@ const TeamUpdates: React.FC = () => {
       teamId: 'bodden',
       teamName: 'Bodden',
       teamCode: 'BTF',
-      colorPrimary: '#7e22ce',
+      colorPrimary: '#0A1172',
       hasUnreadUpdates: false,
     },
     {
@@ -50,14 +52,10 @@ const TeamUpdates: React.FC = () => {
       teamId: 'future',
       teamName: 'Future SC',
       teamCode: 'FSC',
-      colorPrimary: '#b45309',
+      colorPrimary: '#0A1172',
       hasUnreadUpdates: false,
     },
   ];
-
-  const getGradient = (hasUnread: boolean) => {
-    return hasUnread ? styles.activeStoryRing : styles.inactiveStoryRing;
-  };
 
   return (
     <View style={styles.container}>
@@ -72,7 +70,14 @@ const TeamUpdates: React.FC = () => {
       >
         {teamStories.map(team => (
           <TouchableOpacity key={team.id} style={styles.storyContainer}>
-            <View style={[styles.storyRing, getGradient(team.hasUnreadUpdates)]}>
+            <LinearGradient
+              colors={
+                team.hasUnreadUpdates
+                  ? ['#3b82f6', '#1d4ed8']
+                  : ['#94a3b8', '#64748b']
+              }
+              style={styles.storyRing}
+            >
               <View style={styles.storyImageContainer}>
                 <View 
                   style={[
@@ -83,7 +88,7 @@ const TeamUpdates: React.FC = () => {
                   <Text style={styles.teamCode}>{team.teamCode}</Text>
                 </View>
               </View>
-            </View>
+            </LinearGradient>
             <Text style={styles.teamName}>{team.teamName}</Text>
           </TouchableOpacity>
         ))}
@@ -94,7 +99,7 @@ const TeamUpdates: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#e1effe', // Light blue background
+    // Removed the background color to allow gradient to flow through
     paddingTop: 8,
     paddingBottom: 12,
   },
@@ -105,7 +110,7 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#2563eb',
+    color: 'white', // Changed to white for better contrast on gradient
   },
   scrollContent: {
     paddingHorizontal: 12,
@@ -120,12 +125,8 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     padding: 2,
     marginBottom: 4,
-  },
-  activeStoryRing: {
-    backgroundColor: '#2563eb',
-  },
-  inactiveStoryRing: {
-    backgroundColor: '#cbd5e1',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   storyImageContainer: {
     width: 60,
@@ -150,7 +151,7 @@ const styles = StyleSheet.create({
   teamName: {
     fontSize: 12,
     marginTop: 4,
-    color: '#111827',
+    color: 'white', // Changed to white for better contrast on gradient
   },
 });
 
