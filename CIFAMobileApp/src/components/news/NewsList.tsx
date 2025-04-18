@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import NewsCard from './NewsCard';
 import { useNews } from '../../hooks/useNews';
 import { NewsArticle } from '../../services/firebase/news';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns/formatDistanceToNow';;
 
 interface NewsListProps {
   category?: string;
@@ -404,3 +404,5 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+
+export default NewsList;
