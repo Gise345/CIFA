@@ -1,5 +1,7 @@
+// CIFAMobileApp/src/components/tables/LeagueTableRow.tsx
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
 interface Team {
   id: string;
@@ -18,8 +20,22 @@ interface LeagueTableRowProps {
 }
 
 const LeagueTableRow: React.FC<LeagueTableRowProps> = ({ team, isLast = false }) => {
+  const router = useRouter();
+  
+  const handleTeamPress = () => {
+    // Use string literal for navigation
+    router.push({
+      pathname: "/teams/[id]",
+      params: { id: team.id },
+    });
+  };
+  
   return (
-    <View style={[styles.row, !isLast && styles.borderBottom]}>
+    <TouchableOpacity 
+      style={[styles.row, !isLast && styles.borderBottom]}
+      onPress={handleTeamPress}
+      activeOpacity={0.7}
+    >
       <Text style={[styles.text, styles.positionColumn, styles.positionText]}>
         {team.position}
       </Text>
@@ -45,7 +61,7 @@ const LeagueTableRow: React.FC<LeagueTableRowProps> = ({ team, isLast = false })
       <Text style={[styles.text, styles.pointsColumn, styles.pointsText]}>
         {team.points}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -53,7 +69,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 8,
   },
   borderBottom: {
@@ -61,7 +77,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f3f4f6',
   },
   text: {
-    fontSize: 12,
+    fontSize: 13,
   },
   positionColumn: {
     flex: 1,
@@ -92,10 +108,10 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    marginRight: 4,
+    marginRight: 8,
   },
   teamName: {
-    fontSize: 12,
+    fontSize: 13,
   },
   pointsText: {
     fontWeight: 'bold',

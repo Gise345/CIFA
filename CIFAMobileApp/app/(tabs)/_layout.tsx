@@ -56,6 +56,15 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Feather name="bar-chart-2" size={22} color={color} />,
         }}
       />
+      <Tabs.Screen 
+        name="news"
+        options={{
+          title: "News",
+          tabBarIcon: ({ color }) => (
+            <Feather name="file-text" size={22} color={color} />
+          ),
+        }}
+      />
       <Tabs.Screen
         name="more"
         options={{
