@@ -2,7 +2,7 @@
 import { Tabs } from "expo-router";
 import React from "react";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons  } from '@expo/vector-icons';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -35,10 +35,17 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="stats"
+        options={{
+          title: "Stats",
+          tabBarIcon: ({ color }) => <Feather name="bar-chart-2" size={22} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="local"
         options={{
-          title: "Matches",
-          tabBarIcon: ({ color }) => <Feather name="calendar" size={22} color={color} />,
+          title: "Teams",
+          tabBarIcon: ({ color }) => <Feather name="users" size={22} color={color} />,
         }}
       />
       <Tabs.Screen
@@ -48,13 +55,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Feather name="award" size={22} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="stats"
-        options={{
-          title: "Stats",
-          tabBarIcon: ({ color }) => <Feather name="bar-chart-2" size={22} color={color} />,
-        }}
-      />
+      
       <Tabs.Screen 
         name="news"
         options={{
