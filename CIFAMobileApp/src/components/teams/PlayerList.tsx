@@ -1,140 +1,153 @@
 // CIFAMobileApp/src/components/teams/PlayerList.tsx
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
+
 import Card from '../common/Card';
 import Section from '../common/Section';
-
-interface Player {
-  id: string;
-  name: string;
-  position: string;
-  number: number;
-  nationality: string;
-  age: number;
-  photoUrl?: string;
-}
+import { useTeams } from '../../../src/hooks/useTeams';
+import { Player } from '../../services/firebase/teams';
 
 interface PlayerListProps {
   teamId: string;
   limit?: number;
   showViewAll?: boolean;
+  showPositionGroups?: boolean;
+}
+
+// Group players by position
+interface PlayersByPosition {
+  Goalkeepers: Player[];
+  Defenders: Player[];
+  Midfielders: Player[];
+  Forwards: Player[];
 }
 
 const PlayerList: React.FC<PlayerListProps> = ({ 
   teamId, 
   limit, 
-  showViewAll = true 
+  showViewAll = true,
+  showPositionGroups = true
 }) => {
   const router = useRouter();
+  const { fetchTeamPlayers: getTeamPlayers, loading, error } = useTeams();
   
-  // This would come from Firebase in production
-  const getPlayers = (teamId: string) => {
-    // Mock player data
-    const players: { [key: string]: Player[] } = {
-      'team1': [ // Elite SC
-        {
-          id: 'player1',
-          name: 'Jermaine Wilson',
-          position: 'Goalkeeper',
-          number: 1,
-          nationality: 'Cayman Islands',
-          age: 28,
-        },
-        {
-          id: 'player2',
-          name: 'Christopher Ebanks',
-          position: 'Defender',
-          number: 4,
-          nationality: 'Cayman Islands',
-          age: 26,
-        },
-        {
-          id: 'player3',
-          name: 'Wesley Robinson',
-          position: 'Midfielder',
-          number: 8,
-          nationality: 'Cayman Islands',
-          age: 25,
-        },
-        {
-          id: 'player4',
-          name: 'Raul Rodriguez',
-          position: 'Forward',
-          number: 10,
-          nationality: 'Jamaica',
-          age: 24,
-        },
-        {
-          id: 'player5',
-          name: 'Mark Ebanks',
-          position: 'Forward',
-          number: 9,
-          nationality: 'Cayman Islands',
-          age: 29,
-        },
-      ],
-      'team2': [ // Scholars
-        {
-          id: 'player6',
-          name: 'Richard McField',
-          position: 'Goalkeeper',
-          number: 1,
-          nationality: 'Cayman Islands',
-          age: 30,
-        },
-        {
-          id: 'player7',
-          name: 'Oneil Taylor',
-          position: 'Defender',
-          number: 5,
-          nationality: 'Jamaica',
-          age: 27,
-        },
-        {
-          id: 'player8',
-          name: 'James Ebanks',
-          position: 'Midfielder',
-          number: 6,
-          nationality: 'Cayman Islands',
-          age: 24,
-        },
-        {
-          id: 'player9',
-          name: 'Rolly Bodden',
-          position: 'Forward',
-          number: 11,
-          nationality: 'Cayman Islands',
-          age: 23,
-        },
-        {
-          id: 'player10',
-          name: 'Dwight Dunk',
-          position: 'Forward',
-          number: 9,
-          nationality: 'Cayman Islands',
-          age: 25,
-        },
-      ],
-      // Add more teams as needed
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [playersByPosition, setPlayersByPosition] = useState<PlayersByPosition>({
+    Goalkeepers: [],
+    Defenders: [],
+    Midfielders: [],
+    Forwards: []
+  });
+  
+  // Load players data
+  useEffect(() => {
+    const loadPlayers = async () => {
+      try {
+        const playersData = await getTeamPlayers(teamId);
+        setPlayers(playersData);
+        
+        // Group players by position
+        const grouped: PlayersByPosition = {
+          Goalkeepers: [],
+          Defenders: [],
+          Midfielders: [],
+          Forwards: []
+        };
+        
+        playersData.forEach(player => {
+          if (player.position === 'Goalkeeper') {
+            grouped.Goalkeepers.push(player);
+          } else if (player.position === 'Defender') {
+            grouped.Defenders.push(player);
+          } else if (player.position === 'Midfielder') {
+            grouped.Midfielders.push(player);
+          } else if (player.position === 'Forward') {
+            grouped.Forwards.push(player);
+          }
+        });
+        
+        setPlayersByPosition(grouped);
+      } catch (err) {
+        console.error('Error loading players:', err);
+      }
     };
     
-    return players[teamId] || [];
-  };
-  
-  const players = getPlayers(teamId);
-  
+    if (teamId) {
+      loadPlayers();
+    }
+  }, [teamId]);
+
   // Apply limit if provided
   const displayedPlayers = limit ? players.slice(0, limit) : players;
-  
+
+  // Handle player press - navigate to player details
   const handlePlayerPress = (playerId: string) => {
     router.push(`/players/${playerId}`);
   };
   
+  // Handle view all press - navigate to team roster
   const handleViewAllPress = () => {
-    // Use a different approach for navigation to team players
     router.push(`/teams/${teamId}/roster`);
   };
+
+  // Render player item
+  const renderPlayerItem = (player: Player) => (
+    <TouchableOpacity
+      key={player.id}
+      style={styles.playerRow}
+      onPress={() => handlePlayerPress(player.id)}
+    >
+      <View style={styles.playerNumberContainer}>
+        <Text style={styles.playerNumber}>{player.number}</Text>
+      </View>
+      <View style={styles.playerInfo}>
+        <Text style={styles.playerName}>{player.name}</Text>
+        <Text style={styles.playerNationality}>{player.nationality}</Text>
+      </View>
+      <Text style={styles.playerAge}>{player.age} yrs</Text>
+    </TouchableOpacity>
+  );
+
+  // Render players by position
+  const renderPositionSection = (positionTitle: string, positionPlayers: Player[]) => {
+    if (positionPlayers.length === 0) return null;
+    
+    return (
+      <View style={styles.positionSection}>
+        <Text style={styles.positionTitle}>{positionTitle}</Text>
+        {positionPlayers.map(player => renderPlayerItem(player))}
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="small" color="#2563eb" />
+        <Text style={styles.loadingText}>Loading players...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Feather name="alert-circle" size={24} color="#ef4444" />
+        <Text style={styles.errorText}>Failed to load players</Text>
+      </View>
+    );
+  }
+
+  if (players.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Feather name="users" size={24} color="#9ca3af" />
+        <Text style={styles.emptyText}>No players found</Text>
+      </View>
+    );
+  }
 
   return (
     <Section 
@@ -144,93 +157,16 @@ const PlayerList: React.FC<PlayerListProps> = ({
       style={styles.section}
     >
       <Card>
-        <View style={styles.positionSection}>
-          <Text style={styles.positionTitle}>Goalkeepers</Text>
-          {displayedPlayers
-            .filter(player => player.position === 'Goalkeeper')
-            .map(player => (
-              <TouchableOpacity
-                key={player.id}
-                style={styles.playerRow}
-                onPress={() => handlePlayerPress(player.id)}
-              >
-                <View style={styles.playerNumberContainer}>
-                  <Text style={styles.playerNumber}>{player.number}</Text>
-                </View>
-                <View style={styles.playerInfo}>
-                  <Text style={styles.playerName}>{player.name}</Text>
-                  <Text style={styles.playerNationality}>{player.nationality}</Text>
-                </View>
-                <Text style={styles.playerAge}>{player.age} yrs</Text>
-              </TouchableOpacity>
-            ))}
-        </View>
-        
-        <View style={styles.positionSection}>
-          <Text style={styles.positionTitle}>Defenders</Text>
-          {displayedPlayers
-            .filter(player => player.position === 'Defender')
-            .map(player => (
-              <TouchableOpacity
-                key={player.id}
-                style={styles.playerRow}
-                onPress={() => handlePlayerPress(player.id)}
-              >
-                <View style={styles.playerNumberContainer}>
-                  <Text style={styles.playerNumber}>{player.number}</Text>
-                </View>
-                <View style={styles.playerInfo}>
-                  <Text style={styles.playerName}>{player.name}</Text>
-                  <Text style={styles.playerNationality}>{player.nationality}</Text>
-                </View>
-                <Text style={styles.playerAge}>{player.age} yrs</Text>
-              </TouchableOpacity>
-            ))}
-        </View>
-        
-        <View style={styles.positionSection}>
-          <Text style={styles.positionTitle}>Midfielders</Text>
-          {displayedPlayers
-            .filter(player => player.position === 'Midfielder')
-            .map(player => (
-              <TouchableOpacity
-                key={player.id}
-                style={styles.playerRow}
-                onPress={() => handlePlayerPress(player.id)}
-              >
-                <View style={styles.playerNumberContainer}>
-                  <Text style={styles.playerNumber}>{player.number}</Text>
-                </View>
-                <View style={styles.playerInfo}>
-                  <Text style={styles.playerName}>{player.name}</Text>
-                  <Text style={styles.playerNationality}>{player.nationality}</Text>
-                </View>
-                <Text style={styles.playerAge}>{player.age} yrs</Text>
-              </TouchableOpacity>
-            ))}
-        </View>
-        
-        <View style={styles.positionSection}>
-          <Text style={styles.positionTitle}>Forwards</Text>
-          {displayedPlayers
-            .filter(player => player.position === 'Forward')
-            .map(player => (
-              <TouchableOpacity
-                key={player.id}
-                style={styles.playerRow}
-                onPress={() => handlePlayerPress(player.id)}
-              >
-                <View style={styles.playerNumberContainer}>
-                  <Text style={styles.playerNumber}>{player.number}</Text>
-                </View>
-                <View style={styles.playerInfo}>
-                  <Text style={styles.playerName}>{player.name}</Text>
-                  <Text style={styles.playerNationality}>{player.nationality}</Text>
-                </View>
-                <Text style={styles.playerAge}>{player.age} yrs</Text>
-              </TouchableOpacity>
-            ))}
-        </View>
+        {showPositionGroups ? (
+          <>
+            {renderPositionSection('Goalkeepers', playersByPosition.Goalkeepers)}
+            {renderPositionSection('Defenders', playersByPosition.Defenders)}
+            {renderPositionSection('Midfielders', playersByPosition.Midfielders)}
+            {renderPositionSection('Forwards', playersByPosition.Forwards)}
+          </>
+        ) : (
+          displayedPlayers.map(player => renderPlayerItem(player))
+        )}
       </Card>
     </Section>
   );
@@ -239,6 +175,36 @@ const PlayerList: React.FC<PlayerListProps> = ({
 const styles = StyleSheet.create({
   section: {
     marginBottom: 16,
+  },
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#6b7280',
+  },
+  errorContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  errorText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#ef4444',
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#6b7280',
   },
   positionSection: {
     marginBottom: 16,

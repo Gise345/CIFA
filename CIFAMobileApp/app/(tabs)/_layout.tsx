@@ -1,9 +1,8 @@
 // CIFAMobileApp/app/(tabs)/_layout.tsx
 import { Tabs } from "expo-router";
 import React from "react";
-import { View, StyleSheet } from "react-native";
-import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
@@ -15,11 +14,11 @@ export default function TabLayout() {
         tabBarStyle: {
           height: 60 + insets.bottom,
           paddingBottom: insets.bottom,
-          backgroundColor: '#191970', // Darker purple that complements the gradient
+          backgroundColor: '#191970', // Dark blue background
           borderTopWidth: 0,
         },
-        tabBarActiveTintColor: '#E50914', // Light pink
-        tabBarInactiveTintColor: '#90A4ED', // Light purple
+        tabBarActiveTintColor: '#E50914', // Red for active tabs
+        tabBarInactiveTintColor: '#90A4ED', // Light purple for inactive tabs
         tabBarShowLabel: true,
         tabBarLabelStyle: {
           fontSize: 10,
