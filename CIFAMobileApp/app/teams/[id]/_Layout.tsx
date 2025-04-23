@@ -12,7 +12,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useTeams } from '../../../src/hooks/useTeams';
-import TeamLogo from '../../../src/components/common/TeamLogo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TeamLayout() {
@@ -21,6 +20,7 @@ export default function TeamLayout() {
   const router = useRouter();
   
   const { selectedTeam, loading, error, fetchTeamById } = useTeams();
+  const [isFollowing, setIsFollowing] = useState(false);
   
   // Load team data on mount
   useEffect(() => {
@@ -44,16 +44,16 @@ export default function TeamLayout() {
     return '#2563eb'; // Default blue
   };
   
-  // Get contrast color for text based on primary color
-  const getContrastColor = () => {
-    // Simple contrast calculation, would need a more sophisticated method in production
-    return '#ffffff'; // White for now
+  // Toggle team follow status
+  const toggleFollow = () => {
+    setIsFollowing(!isFollowing);
+    // In a real app, you would update this in a database
   };
   
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={[getPrimaryColor(), '#0A1172', '#041E42']} // Start with team color, fade to standard app background
+        colors={[getPrimaryColor(), '#191970', '#041E42']} // Start with team color, fade to standard app background
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
         style={styles.gradient}
@@ -64,46 +64,50 @@ export default function TeamLayout() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Feather name="arrow-left" size={24} color={getContrastColor()} />
+            <Feather name="arrow-left" size={24} color="white" />
           </TouchableOpacity>
           
           {/* Team Header Content */}
           <View style={styles.teamHeaderContent}>
             {loading ? (
-              <ActivityIndicator size="small" color={getContrastColor()} />
+              <ActivityIndicator size="small" color="white" />
             ) : error ? (
-              <Text style={[styles.errorText, { color: getContrastColor() }]}>
+              <Text style={styles.errorText}>
                 Error loading team
               </Text>
             ) : selectedTeam ? (
               <View style={styles.teamInfoContainer}>
-                <TeamLogo
-                  teamId={selectedTeam.id}
-                  teamName={selectedTeam.name}
-                  teamCode={getTeamInitials(selectedTeam.name)}
-                  size="medium"
-                  colorPrimary={selectedTeam.colorPrimary}
-                  colorSecondary={getContrastColor()}
-                />
+                <View style={styles.logoCircle}>
+                  <Text style={styles.logoText}>
+                    {getTeamInitials(selectedTeam.name)}
+                  </Text>
+                </View>
                 <View style={styles.teamTextContainer}>
-                  <Text style={[styles.teamName, { color: getContrastColor() }]}>
+                  <Text style={styles.teamName}>
                     {selectedTeam.name}
                   </Text>
-                  <Text style={[styles.teamDivision, { color: getContrastColor() }]}>
+                  <Text style={styles.teamDivision}>
                     {selectedTeam.division || 'Team'}
                   </Text>
                 </View>
               </View>
             ) : (
-              <Text style={[styles.loadingText, { color: getContrastColor() }]}>
+              <Text style={styles.loadingText}>
                 Loading team...
               </Text>
             )}
           </View>
           
-          {/* Optional Share or Favorite Button */}
-          <TouchableOpacity style={styles.actionButton}>
-            <Feather name="heart" size={20} color={getContrastColor()} />
+          {/* Follow Button */}
+          <TouchableOpacity 
+            style={[styles.followButton, isFollowing && styles.followingButton]}
+            onPress={toggleFollow}
+          >
+            <Feather 
+              name={isFollowing ? "star" : "star"} 
+              size={20} 
+              color={isFollowing ? "#FFD700" : "white"} 
+            />
           </TouchableOpacity>
         </SafeAreaView>
       </LinearGradient>
@@ -124,7 +128,9 @@ export default function TeamLayout() {
           tabBarLabelStyle: {
             fontSize: 12,
             fontWeight: '500',
-            textTransform: 'uppercase',
+          },
+          tabBarIconStyle: {
+            marginBottom: 3,
           },
         }}
       >
@@ -217,19 +223,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  logoCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  logoText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
   teamTextContainer: {
-    marginLeft: 12,
+    flexDirection: 'column',
   },
   teamName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
+    color: 'white',
     marginBottom: 2,
   },
   teamDivision: {
-    fontSize: 14,
-    opacity: 0.8,
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
   },
-  actionButton: {
+  followButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -237,10 +258,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  followingButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+  },
   loadingText: {
     fontSize: 16,
+    color: 'white',
   },
   errorText: {
     fontSize: 14,
+    color: 'white',
   },
 });

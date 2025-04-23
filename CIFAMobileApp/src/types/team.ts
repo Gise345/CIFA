@@ -32,4 +32,5 @@ export interface Team {
     weight?: number;
     nationality?: string;
     bio?: string;
+    age?: number;
   }

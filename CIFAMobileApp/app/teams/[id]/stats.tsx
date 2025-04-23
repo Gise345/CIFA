@@ -1,60 +1,25 @@
 // CIFAMobileApp/app/teams/[id]/stats.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   StyleSheet, 
   View, 
   Text, 
   ScrollView, 
-  RefreshControl,
-  ActivityIndicator 
+  RefreshControl
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { useTeams } from '../../../src/hooks/useTeams';
 import Card from '../../../src/components/common/Card';
-import Section from '../../../src/components/common/Section';
-
-// Interface for team statistics
-interface TeamStats {
-  matches: {
-    played: number;
-    won: number;
-    drawn: number;
-    lost: number;
-    winPercentage: number;
-  };
-  goals: {
-    scored: number;
-    conceded: number;
-    average: number;
-  };
-  discipline: {
-    yellowCards: number;
-    redCards: number;
-  };
-  topScorers: {
-    playerId: string;
-    playerName: string;
-    goals: number;
-  }[];
-}
+import TeamComparison from '../../../src/components/teams/TeamComparison';
 
 export default function TeamStatsScreen() {
   const { id } = useLocalSearchParams();
   const teamId = Array.isArray(id) ? id[0] : id;
   
-  const { selectedTeam, teamFixtures, teamPlayers, loading, error, loadTeamData } = useTeams();
+  const { selectedTeam, teamFixtures, loading, error, loadTeamData } = useTeams();
   const [refreshing, setRefreshing] = useState(false);
-  
-  // Initialize team stats
-  const [teamStats, setTeamStats] = useState<TeamStats>({
-    matches: { played: 0, won: 0, drawn: 0, lost: 0, winPercentage: 0 },
-    goals: { scored: 0, conceded: 0, average: 0 },
-    discipline: { yellowCards: 0, redCards: 0 },
-    topScorers: []
-  });
   
   // Load team data on mount
   useEffect(() => {
@@ -62,13 +27,6 @@ export default function TeamStatsScreen() {
       loadTeamData(teamId);
     }
   }, [teamId]);
-  
-  // Calculate statistics when fixtures change
-  useEffect(() => {
-    if (teamFixtures.length > 0 && selectedTeam) {
-      calculateTeamStats();
-    }
-  }, [teamFixtures, selectedTeam]);
   
   // Handle refresh
   const handleRefresh = async () => {
@@ -79,321 +37,315 @@ export default function TeamStatsScreen() {
     setRefreshing(false);
   };
   
-  // Calculate team statistics from fixtures
-  const calculateTeamStats = () => {
-    // Only use completed matches
+  // Calculate team stats from fixtures
+  const calculateStats = () => {
+    if (!teamFixtures || teamFixtures.length === 0) {
+      return {
+        matches: 0,
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        goalsFor: 0,
+        goalsAgainst: 0,
+        cleanSheets: 0,
+        winPercentage: 0,
+        form: []
+      };
+    }
+    
+    let matches = 0;
+    let wins = 0;
+    let draws = 0;
+    let losses = 0;
+    let goalsFor = 0;
+    let goalsAgainst = 0;
+    let cleanSheets = 0;
+    const form: string[] = [];
+    
+    // Only process completed fixtures
     const completedFixtures = teamFixtures.filter(fixture => 
       fixture.status === 'completed'
     );
     
-    if (completedFixtures.length === 0 || !selectedTeam) return;
-    
-    let matchesPlayed = 0;
-    let matchesWon = 0;
-    let matchesDrawn = 0;
-    let matchesLost = 0;
-    let goalsScored = 0;
-    let goalsConceded = 0;
-    let yellowCards = 0;
-    let redCards = 0;
-    
-    // Track player goals
-    const playerGoals: Record<string, number> = {};
-    
-    // Process each fixture
     completedFixtures.forEach(fixture => {
-      matchesPlayed++;
+      matches++;
       
-      // Determine if team is home or away
-      const isHomeTeam = fixture.homeTeamId === teamId;
-      const teamScore = isHomeTeam ? fixture.homeScore || 0 : fixture.awayScore || 0;
-      const opponentScore = isHomeTeam ? fixture.awayScore || 0 : fixture.homeScore || 0;
-      
-      // Update match results
-      if (teamScore > opponentScore) {
-        matchesWon++;
-      } else if (teamScore === opponentScore) {
-        matchesDrawn++;
-      } else {
-        matchesLost++;
-      }
+      // Check if team is home or away
+      const isHome = fixture.homeTeamId === teamId;
+      const teamScore = isHome ? fixture.homeScore || 0 : fixture.awayScore || 0;
+      const opponentScore = isHome ? fixture.awayScore || 0 : fixture.homeScore || 0;
       
       // Update goals
-      goalsScored += teamScore;
-      goalsConceded += opponentScore;
+      goalsFor += teamScore;
+      goalsAgainst += opponentScore;
       
-      // Process events if available
-      if (fixture.events) {
-        fixture.events.forEach(event => {
-          // Only count events for this team
-          if (event.teamId === teamId) {
-            // Count cards
-            if (event.type === 'yellowCard') {
-              yellowCards++;
-            } else if (event.type === 'redCard') {
-              redCards++;
-            }
-            
-            // Count goals for player stats
-            if (event.type === 'goal' || event.type === 'penalty') {
-              if (!playerGoals[event.playerId]) {
-                playerGoals[event.playerId] = 0;
-              }
-              playerGoals[event.playerId]++;
-            }
-          }
-          
-          // Count own goals scored by opponent as goals for this team
-          if (event.teamId !== teamId && event.type === 'ownGoal') {
-            goalsScored++;
-          }
-          
-          // Count own goals scored by this team as goals for opponent
-          if (event.teamId === teamId && event.type === 'ownGoal') {
-            goalsConceded++;
-          }
-        });
+      // Update results
+      if (teamScore > opponentScore) {
+        wins++;
+        form.unshift('W');
+      } else if (teamScore === opponentScore) {
+        draws++;
+        form.unshift('D');
+      } else {
+        losses++;
+        form.unshift('L');
+      }
+      
+      // Update clean sheets
+      if (opponentScore === 0) {
+        cleanSheets++;
       }
     });
     
     // Calculate win percentage
-    const winPercentage = matchesPlayed > 0 
-      ? (matchesWon / matchesPlayed) * 100 
-      : 0;
+    const winPercentage = matches > 0 ? (wins / matches) * 100 : 0;
     
-    // Calculate goals average per match
-    const goalsAverage = matchesPlayed > 0 
-      ? goalsScored / matchesPlayed 
-      : 0;
+    // Limit form to last 5 matches
+    const recentForm = form.slice(0, 5);
     
-    // Create top scorers list
-    const topScorers = Object.entries(playerGoals)
-      .map(([playerId, goals]) => {
-        // Find player name from team players
-        const player = teamPlayers.find(p => p.id === playerId);
-        return {
-          playerId,
-          playerName: player ? player.name : 'Unknown Player',
-          goals
-        };
-      })
-      .sort((a, b) => b.goals - a.goals)
-      .slice(0, 5); // Top 5 scorers
-    
-    // Update team stats
-    setTeamStats({
-      matches: {
-        played: matchesPlayed,
-        won: matchesWon,
-        drawn: matchesDrawn,
-        lost: matchesLost,
-        winPercentage: Math.round(winPercentage)
-      },
-      goals: {
-        scored: goalsScored,
-        conceded: goalsConceded,
-        average: parseFloat(goalsAverage.toFixed(2))
-      },
-      discipline: {
-        yellowCards,
-        redCards
-      },
-      topScorers
-    });
+    return {
+      matches,
+      wins,
+      draws,
+      losses,
+      goalsFor,
+      goalsAgainst,
+      cleanSheets,
+      winPercentage: Math.round(winPercentage),
+      form: recentForm
+    };
   };
   
-  // Render loading state
-  if (loading && !refreshing && !selectedTeam) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2563eb" />
-        <Text style={styles.loadingText}>Loading team statistics...</Text>
-      </View>
-    );
-  }
+  const stats = calculateStats();
   
   return (
-    <ScrollView
+    <LinearGradient
+      colors={[selectedTeam?.colorPrimary || '#2563eb', '#191970', '#041E42']} 
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 0.6 }}
       style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-      }
     >
-      {/* Error State */}
-      {error && (
-        <View style={styles.errorContainer}>
-          <Feather name="alert-circle" size={32} color="#ef4444" />
-          <Text style={styles.errorText}>{error}</Text>
+      <View style={styles.contentContainer}>
+        {/* Stats Title */}
+        <View style={styles.headerSection}>
+          <Text style={styles.teamName}>{selectedTeam?.name || 'Team'}</Text>
+          <Text style={styles.statsTitle}>Statistics</Text>
         </View>
-      )}
-      
-      {selectedTeam && (
-        <>
-          {/* Season Overview */}
-          <Section title="SEASON OVERVIEW" style={styles.section}>
-            <Card>
-              <View style={styles.statsGrid}>
-                <View style={styles.statCard}>
-                  <Text style={styles.statValue}>{teamStats.matches.played}</Text>
-                  <Text style={styles.statLabel}>Matches</Text>
-                </View>
-                
-                <View style={styles.statCard}>
-                  <Text style={styles.statValue}>{teamStats.matches.won}</Text>
-                  <Text style={styles.statLabel}>Wins</Text>
-                </View>
-                
-                <View style={styles.statCard}>
-                  <Text style={styles.statValue}>{teamStats.matches.drawn}</Text>
-                  <Text style={styles.statLabel}>Draws</Text>
-                </View>
-                
-                <View style={styles.statCard}>
-                  <Text style={styles.statValue}>{teamStats.matches.lost}</Text>
-                  <Text style={styles.statLabel}>Losses</Text>
-                </View>
+        
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+        >
+          {/* Season Statistics */}
+          <Card style={styles.statsCard}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>SEASON STATISTICS</Text>
+            </View>
+            
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{stats.matches}</Text>
+                <Text style={styles.statLabel}>Matches</Text>
               </View>
               
-              {/* Win percentage meter */}
-              <View style={styles.winPercentageContainer}>
-                <View style={styles.meterLabelContainer}>
-                  <Text style={styles.meterLabel}>Win Percentage</Text>
-                  <Text style={styles.percentageValue}>{teamStats.matches.winPercentage}%</Text>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{stats.wins}</Text>
+                <Text style={styles.statLabel}>Wins</Text>
+              </View>
+              
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{stats.draws}</Text>
+                <Text style={styles.statLabel}>Draws</Text>
+              </View>
+              
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{stats.losses}</Text>
+                <Text style={styles.statLabel}>Losses</Text>
+              </View>
+            </View>
+            
+            {/* Win Percentage */}
+            <View style={styles.percentageContainer}>
+              <View style={styles.percentageHeader}>
+                <Text style={styles.percentageLabel}>Win Percentage</Text>
+                <Text style={styles.percentageValue}>{stats.winPercentage}%</Text>
+              </View>
+              <View style={styles.progressBarContainer}>
+                <View 
+                  style={[
+                    styles.progressBar, 
+                    { 
+                      width: `${stats.winPercentage}%`,
+                      backgroundColor: selectedTeam?.colorPrimary || '#2563eb'
+                    }
+                  ]} 
+                />
+              </View>
+            </View>
+            
+            {/* Form */}
+            <View style={styles.formContainer}>
+              <Text style={styles.formLabel}>Recent Form</Text>
+              <View style={styles.formBadges}>
+                {stats.form.length > 0 ? (
+                  stats.form.map((result, index) => (
+                    <View 
+                      key={index} 
+                      style={[
+                        styles.formBadge,
+                        result === 'W' && styles.winBadge,
+                        result === 'D' && styles.drawBadge,
+                        result === 'L' && styles.lossBadge
+                      ]}
+                    >
+                      <Text style={styles.formBadgeText}>{result}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.noFormText}>No recent matches</Text>
+                )}
+              </View>
+            </View>
+          </Card>
+          
+          {/* Scoring Statistics */}
+          <Card style={styles.statsCard}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>GOALS</Text>
+            </View>
+            
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{stats.goalsFor}</Text>
+                <Text style={styles.statLabel}>Scored</Text>
+              </View>
+              
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{stats.goalsAgainst}</Text>
+                <Text style={styles.statLabel}>Conceded</Text>
+              </View>
+              
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{stats.goalsFor - stats.goalsAgainst}</Text>
+                <Text style={styles.statLabel}>Difference</Text>
+              </View>
+              
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{stats.cleanSheets}</Text>
+                <Text style={styles.statLabel}>Clean Sheets</Text>
+              </View>
+            </View>
+            
+            {/* Goals Per Match */}
+            <View style={styles.averageContainer}>
+              <View style={styles.averageItem}>
+                <View style={styles.averageHeader}>
+                  <Text style={styles.averageLabel}>Goals Scored Per Match</Text>
+                  <Text style={styles.averageValue}>
+                    {stats.matches > 0 ? (stats.goalsFor / stats.matches).toFixed(1) : '0.0'}
+                  </Text>
                 </View>
-                <View style={styles.meterBackground}>
+                <View style={styles.progressBarContainer}>
                   <View 
                     style={[
-                      styles.meterFill, 
-                      { width: `${teamStats.matches.winPercentage}%` }
-                    ]}
+                      styles.progressBar, 
+                      { 
+                        width: `${Math.min((stats.goalsFor / stats.matches) * 20, 100)}%`,
+                        backgroundColor: '#059669'
+                      }
+                    ]} 
                   />
                 </View>
               </View>
-            </Card>
-          </Section>
-          
-          {/* Scoring Stats */}
-          <Section title="SCORING" style={styles.section}>
-            <Card>
-              <View style={styles.statsGrid}>
-                <View style={styles.statCard}>
-                  <Text style={styles.statValue}>{teamStats.goals.scored}</Text>
-                  <Text style={styles.statLabel}>Goals For</Text>
-                </View>
-                
-                <View style={styles.statCard}>
-                  <Text style={styles.statValue}>{teamStats.goals.conceded}</Text>
-                  <Text style={styles.statLabel}>Goals Against</Text>
-                </View>
-                
-                <View style={styles.statCard}>
-                  <Text style={styles.statValueSmall}>{teamStats.goals.average}</Text>
-                  <Text style={styles.statLabel}>Avg. Goals</Text>
-                </View>
-                
-                <View style={styles.statCard}>
-                  <Text style={styles.statValueSmall}>
-                    {teamStats.goals.scored - teamStats.goals.conceded}
+              
+              <View style={styles.averageItem}>
+                <View style={styles.averageHeader}>
+                  <Text style={styles.averageLabel}>Goals Conceded Per Match</Text>
+                  <Text style={styles.averageValue}>
+                    {stats.matches > 0 ? (stats.goalsAgainst / stats.matches).toFixed(1) : '0.0'}
                   </Text>
-                  <Text style={styles.statLabel}>Goal Diff</Text>
+                </View>
+                <View style={styles.progressBarContainer}>
+                  <View 
+                    style={[
+                      styles.progressBar, 
+                      { 
+                        width: `${Math.min((stats.goalsAgainst / stats.matches) * 20, 100)}%`,
+                        backgroundColor: '#ef4444'
+                      }
+                    ]} 
+                  />
                 </View>
               </View>
-            </Card>
-          </Section>
-          
-          {/* Discipline */}
-          <Section title="DISCIPLINE" style={styles.section}>
-            <Card>
-              <View style={styles.disciplineContainer}>
-                <View style={styles.cardContainer}>
-                  <View style={styles.yellowCard} />
-                  <Text style={styles.cardCount}>{teamStats.discipline.yellowCards}</Text>
-                  <Text style={styles.cardLabel}>Yellow Cards</Text>
-                </View>
-                
-                <View style={styles.cardContainer}>
-                  <View style={styles.redCard} />
-                  <Text style={styles.cardCount}>{teamStats.discipline.redCards}</Text>
-                  <Text style={styles.cardLabel}>Red Cards</Text>
-                </View>
-              </View>
-            </Card>
-          </Section>
-          
-          {/* Top Scorers */}
-          {teamStats.topScorers.length > 0 && (
-            <Section title="TOP SCORERS" style={styles.section}>
-              <Card>
-                {teamStats.topScorers.map((scorer, index) => (
-                  <View key={scorer.playerId} style={[
-                    styles.scorerRow,
-                    index < teamStats.topScorers.length - 1 && styles.borderBottom
-                  ]}>
-                    <Text style={styles.scorerRank}>{index + 1}</Text>
-                    <Text style={styles.scorerName}>{scorer.playerName}</Text>
-                    <Text style={styles.scorerGoals}>{scorer.goals}</Text>
-                  </View>
-                ))}
-              </Card>
-            </Section>
-          )}
-          
-          {/* No Statistics Message */}
-          {teamStats.matches.played === 0 && (
-            <View style={styles.noStatsContainer}>
-              <Feather name="bar-chart-2" size={32} color="#9ca3af" />
-              <Text style={styles.noStatsText}>
-                No match statistics available for this team yet.
-              </Text>
             </View>
-          )}
-        </>
-      )}
-    </ScrollView>
+          </Card>
+          
+          {/* Team Comparison */}
+          <TeamComparison teamAId={teamId} />
+          
+          {/* Add more stat cards as needed */}
+        </ScrollView>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
   },
   contentContainer: {
-    padding: 16,
+    flex: 1,
+    paddingTop: 20,
+  },
+  headerSection: {
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  teamName: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 4,
+  },
+  statsTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 40,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  statsCard: {
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  cardHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
     backgroundColor: '#f9fafb',
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#6b7280',
-  },
-  errorContainer: {
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorText: {
-    marginTop: 8,
-    fontSize: 16,
-    color: '#ef4444',
-    textAlign: 'center',
-  },
-  section: {
-    marginBottom: 16,
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#111827',
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     padding: 16,
   },
-  statCard: {
+  statItem: {
     width: '25%',
     alignItems: 'center',
     marginBottom: 16,
@@ -404,123 +356,99 @@ const styles = StyleSheet.create({
     color: '#111827',
     marginBottom: 4,
   },
-  statValueSmall: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 4,
-  },
   statLabel: {
     fontSize: 12,
     color: '#6b7280',
-    textAlign: 'center',
   },
-  winPercentageContainer: {
+  percentageContainer: {
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
-  meterLabelContainer: {
+  percentageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
   },
-  meterLabel: {
+  percentageLabel: {
     fontSize: 14,
-    color: '#111827',
-    fontWeight: '500',
+    color: '#4b5563',
   },
   percentageValue: {
     fontSize: 14,
-    color: '#2563eb',
     fontWeight: 'bold',
+    color: '#111827',
   },
-  meterBackground: {
+  progressBarContainer: {
     height: 8,
-    backgroundColor: '#e5e7eb',
+    backgroundColor: '#f3f4f6',
     borderRadius: 4,
     overflow: 'hidden',
   },
-  meterFill: {
+  progressBar: {
     height: '100%',
-    backgroundColor: '#2563eb',
     borderRadius: 4,
   },
-  disciplineContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+  formContainer: {
     padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#f3f4f6',
   },
-  cardContainer: {
+  formLabel: {
+    fontSize: 14,
+    color: '#4b5563',
+    marginBottom: 12,
+  },
+  formBadges: {
+    flexDirection: 'row',
+  },
+  formBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 8,
   },
-  yellowCard: {
-    width: 40,
-    height: 60,
-    backgroundColor: '#fcd34d',
-    borderRadius: 4,
-    marginBottom: 12,
+  winBadge: {
+    backgroundColor: '#059669',
   },
-  redCard: {
-    width: 40,
-    height: 60,
+  drawBadge: {
+    backgroundColor: '#9ca3af',
+  },
+  lossBadge: {
     backgroundColor: '#ef4444',
-    borderRadius: 4,
-    marginBottom: 12,
   },
-  cardCount: {
-    fontSize: 20,
+  formBadgeText: {
+    color: 'white',
     fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 4,
+    fontSize: 12,
   },
-  cardLabel: {
+  noFormText: {
     fontSize: 14,
     color: '#6b7280',
+    fontStyle: 'italic',
   },
-  scorerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
+  averageContainer: {
     paddingHorizontal: 16,
+    paddingBottom: 16,
   },
-  borderBottom: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+  averageItem: {
+    marginBottom: 12,
   },
-  scorerRank: {
-    width: 30,
-    fontSize: 16,
-    fontWeight: 'bold',
+  averageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  averageLabel: {
+    fontSize: 14,
     color: '#4b5563',
   },
-  scorerName: {
-    flex: 1,
+  averageValue: {
     fontSize: 14,
-    color: '#111827',
-  },
-  scorerGoals: {
-    fontSize: 16,
     fontWeight: 'bold',
-    color: '#2563eb',
-    width: 30,
-    textAlign: 'center',
-  },
-  noStatsContainer: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  noStatsText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
+    color: '#111827',
   },
 });

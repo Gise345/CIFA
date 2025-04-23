@@ -42,10 +42,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="local"
+        name="clubs"
         options={{
-          title: "Teams",
-          tabBarIcon: ({ color }) => <Feather name="users" size={22} color={color} />,
+          title: "Clubs",
+          tabBarIcon: ({ color }) => <Feather name="shield" size={22} color={color} />,
         }}
       />
       <Tabs.Screen

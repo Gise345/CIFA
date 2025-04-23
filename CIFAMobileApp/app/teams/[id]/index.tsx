@@ -5,10 +5,12 @@ import {
   View, 
   Text, 
   ScrollView, 
+  Image,
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
-  Image
+  Dimensions,
+  Linking
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -24,6 +26,8 @@ import Section from '../../../src/components/common/Section';
 import EnhancedPlayerList from '../../../src/components/teams/EnhancedPlayerList';
 import FixtureItem from '../../../src/components/Leagues/FixtureItem';
 import LeagueStandings from '../../../src/components/Leagues/LeagueStandings';
+
+const windowWidth = Dimensions.get('window').width;
 
 export default function TeamOverviewScreen() {
   const { id } = useLocalSearchParams();
@@ -41,6 +45,7 @@ export default function TeamOverviewScreen() {
   } = useTeams();
   
   const [refreshing, setRefreshing] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   
   // Load team data on mount
   useEffect(() => {
@@ -64,6 +69,12 @@ export default function TeamOverviewScreen() {
   const nextFixture = [...liveFixtures, ...upcomingFixtures][0];
   const lastResult = pastFixtures[0];
   
+  // Toggle follow team
+  const toggleFollow = () => {
+    // In a real app, you would update this in a database
+    setIsFollowing(!isFollowing);
+  };
+  
   // Navigate to fixture details
   const navigateToFixture = (fixtureId: string) => {
     router.push(`/fixtures/${fixtureId}`);
@@ -72,6 +83,20 @@ export default function TeamOverviewScreen() {
   // Navigate to view all fixtures
   const handleViewAllFixtures = () => {
     router.push(`/teams/${teamId}/fixtures`);
+  };
+  
+  // Open website
+  const openWebsite = (url: string) => {
+    if (url.startsWith('http')) {
+      Linking.openURL(url);
+    } else {
+      Linking.openURL(`https://${url}`);
+    }
+  };
+  
+  // Open social media
+  const openSocialMedia = (url: string) => {
+    Linking.openURL(url);
   };
   
   // Render loading state
@@ -103,50 +128,115 @@ export default function TeamOverviewScreen() {
       {/* Team Info */}
       {selectedTeam && (
         <>
-          {/* Team Details */}
-          <Section title="ABOUT THE TEAM" style={styles.section}>
-            <Card>
-              <View style={styles.teamInfoContainer}>
-                {/* Team Details */}
-                <View style={styles.teamDetailsContainer}>
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Founded:</Text>
-                    <Text style={styles.infoValue}>{selectedTeam.foundedYear || 'Unknown'}</Text>
-                  </View>
-                  
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Home Venue:</Text>
-                    <Text style={styles.infoValue}>{selectedTeam.venue || 'Unknown'}</Text>
-                  </View>
-                  
-                  <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Division:</Text>
-                    <Text style={styles.infoValue}>{selectedTeam.division || 'Unknown'}</Text>
-                  </View>
-                  
-                  {selectedTeam.website && (
-                    <View style={styles.infoRow}>
-                      <Text style={styles.infoLabel}>Website:</Text>
-                      <Text style={styles.websiteLink}>{selectedTeam.website}</Text>
-                    </View>
-                  )}
+          {/* Team Hero Section */}
+          <View style={styles.heroSection}>
+            <LinearGradient
+              colors={[selectedTeam.colorPrimary || '#2563eb', '#0A1172']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.heroBg}
+            >
+              <View style={styles.logoContainer}>
+                <View style={[styles.logoCircle, { backgroundColor: selectedTeam.colorPrimary || '#2563eb' }]}>
+                  <Text style={styles.logoText}>{getTeamInitials(selectedTeam.name)}</Text>
+                </View>
+              </View>
+              
+              <View style={styles.teamNameContainer}>
+                <Text style={styles.teamName}>{selectedTeam.name}</Text>
+                <Text style={styles.teamDivision}>{selectedTeam.division}</Text>
+              </View>
+              
+              <TouchableOpacity 
+                style={[styles.followButton, isFollowing && styles.followingButton]}
+                onPress={toggleFollow}
+              >
+                <Feather 
+                  name={isFollowing ? "star" : "star"} 
+                  size={18} 
+                  color={isFollowing ? "#FFD700" : "white"} 
+                  style={styles.followIcon}
+                />
+                <Text style={styles.followButtonText}>
+                  {isFollowing ? 'Following' : 'Follow'}
+                </Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+          
+          {/* Quick Stats */}
+          <View style={styles.quickStatsSection}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{pastFixtures.length}</Text>
+              <Text style={styles.statLabel}>Matches</Text>
+            </View>
+            
+            <View style={styles.statDivider} />
+            
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {teamPlayers.length}
+              </Text>
+              <Text style={styles.statLabel}>Players</Text>
+            </View>
+            
+            <View style={styles.statDivider} />
+            
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {selectedTeam.foundedYear || '-'}
+              </Text>
+              <Text style={styles.statLabel}>Founded</Text>
+            </View>
+          </View>
+          
+          {/* About Section */}
+          <Card style={styles.infoCard}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>ABOUT</Text>
+            </View>
+            
+            <View style={styles.infoContent}>
+              {selectedTeam.description && (
+                <Text style={styles.description}>
+                  {selectedTeam.description}
+                </Text>
+              )}
+              
+              <View style={styles.detailsGrid}>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Home Venue</Text>
+                  <Text style={styles.detailValue}>{selectedTeam.venue || 'Unknown'}</Text>
                 </View>
                 
-                {/* Team Description */}
-                {selectedTeam.description && (
-                  <View style={styles.descriptionContainer}>
-                    <Text style={styles.description}>
-                      {selectedTeam.description}
-                    </Text>
-                  </View>
+                <View style={styles.detailItem}>
+                  <Text style={styles.detailLabel}>Division</Text>
+                  <Text style={styles.detailValue}>{selectedTeam.division || 'Unknown'}</Text>
+                </View>
+                
+                {selectedTeam.website && (
+                  <TouchableOpacity 
+                    style={styles.detailItem}
+                    onPress={() => openWebsite(selectedTeam.website || '')}
+                  >
+                    <Text style={styles.detailLabel}>Website</Text>
+                    <Text style={styles.linkValue}>{selectedTeam.website}</Text>
+                  </TouchableOpacity>
                 )}
               </View>
-            </Card>
-          </Section>
+            </View>
+          </Card>
           
           {/* Next Fixture & Last Result */}
-          <Section title="FIXTURES" viewAllText="View All" onViewAll={handleViewAllFixtures} style={styles.section}>
-            <Card>
+          <Card style={styles.infoCard}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>FIXTURES</Text>
+              <TouchableOpacity onPress={handleViewAllFixtures}>
+                <Text style={styles.viewAllLink}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.fixturesContent}>
               {(nextFixture || lastResult) ? (
                 <View>
                   {/* Next Fixture */}
@@ -181,59 +271,65 @@ export default function TeamOverviewScreen() {
                   <Text style={styles.noFixturesText}>No fixtures available</Text>
                 </View>
               )}
-            </Card>
-          </Section>
-          
-          {/* League Position (if applicable) */}
-          {selectedTeam.leagueId && (
-            <Section title="LEAGUE STANDINGS" viewAllText="Full Table" style={styles.section}>
-              <LeagueStandings 
-                leagueId={selectedTeam.leagueId}
-                showTeamLogos={true}
-                maxRows={4}
-              />
-            </Section>
-          )}
+            </View>
+          </Card>
           
           {/* Squad / Players */}
-          <EnhancedPlayerList teamId={teamId} showViewAll={true} />
+          <Card style={styles.infoCard}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>SQUAD</Text>
+              <TouchableOpacity onPress={() => router.push(`/teams/${teamId}/roster`)}>
+                <Text style={styles.viewAllLink}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <EnhancedPlayerList teamId={teamId} showViewAll={false} />
+          </Card>
           
           {/* Team Achievements */}
           {selectedTeam.achievements && selectedTeam.achievements.length > 0 && (
-            <Section title="ACHIEVEMENTS" style={styles.section}>
-              <Card>
-                <View style={styles.achievementsContainer}>
+            <Card style={styles.infoCard}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>HONOURS</Text>
+              </View>
+              
+              <View style={styles.achievementsContainer}>
                 {selectedTeam.achievements.map((achievement: string, index: number) => (
-                <View key={index} style={styles.achievementRow}>
-                  <View style={styles.achievementBullet} />
-                  <Text style={styles.achievementText}>{achievement}</Text>
-                </View>
-                  ))}
-                </View>
-              </Card>
-            </Section>
+                  <View key={index} style={styles.achievementRow}>
+                    <View style={[styles.achievementBullet, { backgroundColor: selectedTeam.colorPrimary || '#2563eb' }]} />
+                    <Text style={styles.achievementText}>{achievement}</Text>
+                  </View>
+                ))}
+              </View>
+            </Card>
           )}
           
           {/* Team Social Media */}
-          {selectedTeam.socialLinks && Object.keys(selectedTeam.socialLinks).length > 0 && (
-            <Section title="FOLLOW" style={styles.section}>
-              <Card>
-                <View style={styles.socialLinksContainer}>
-                  {Object.entries(selectedTeam.socialLinks).map(([platform, url]) => (
-                    <TouchableOpacity key={platform} style={styles.socialButton}>
-                      <Feather 
-                        name={getSocialIcon(platform) as any} 
-                        size={20} 
-                        color="#2563eb" 
-                      />
-                      <Text style={styles.socialButtonText}>
-                        {getPlatformName(platform)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </Card>
-            </Section>
+          {selectedTeam.socialLinks && Object.keys(selectedTeam.socialLinks || {}).length > 0 && (
+            <Card style={styles.infoCard}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>FOLLOW</Text>
+              </View>
+              
+              <View style={styles.socialLinksContainer}>
+                {Object.entries(selectedTeam.socialLinks || {}).map(([platform, url]) => (
+                  <TouchableOpacity 
+                    key={platform} 
+                    style={styles.socialButton}
+                    onPress={() => openSocialMedia(url as string)}
+                  >
+                    <Feather 
+                      name={getSocialIcon(platform)} 
+                      size={20} 
+                      color="#2563eb" 
+                    />
+                    <Text style={styles.socialButtonText}>
+                      {getPlatformName(platform)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Card>
           )}
         </>
       )}
@@ -241,8 +337,25 @@ export default function TeamOverviewScreen() {
   );
 }
 
+// Helper function to get team initials
+const getTeamInitials = (teamName: string): string => {
+  if (!teamName) return '';
+  
+  const words = teamName.split(' ');
+  if (words.length === 1) {
+    return words[0].substring(0, 3).toUpperCase();
+  }
+  
+  // Return first letter of each word (up to 3)
+  return words
+    .slice(0, 3)
+    .map(word => word.charAt(0))
+    .join('')
+    .toUpperCase();
+};
+
 // Helper function to get social media icon
-const getSocialIcon = (platform: string): string => {
+const getSocialIcon = (platform: string): any => { // Change return type to 'any'
   const platformLower = platform.toLowerCase();
   if (platformLower === 'facebook') return 'facebook';
   if (platformLower === 'twitter' || platformLower === 'x') return 'twitter';
@@ -278,7 +391,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb',
   },
   contentContainer: {
-    padding: 16,
     paddingBottom: 40,
   },
   loadingContainer: {
@@ -286,6 +398,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f9fafb',
+    padding: 40,
   },
   loadingText: {
     marginTop: 12,
@@ -303,44 +416,165 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     textAlign: 'center',
   },
-  section: {
-    marginBottom: 16,
+  // Hero section
+  heroSection: {
+    width: '100%',
   },
-  teamInfoContainer: {
-    padding: 16,
+  heroBg: {
+    paddingTop: 20,
+    paddingBottom: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  teamDetailsContainer: {
-    marginBottom: 16,
+  logoContainer: {
+    marginBottom: 12,
   },
-  infoRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  infoLabel: {
+  logoCircle: {
     width: 100,
-    fontSize: 14,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#2563eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 4,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  logoText: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  teamNameContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  teamName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 4,
+  },
+  teamDivision: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  followButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  followingButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  followIcon: {
+    marginRight: 6,
+  },
+  followButtonText: {
+    color: 'white',
     fontWeight: '500',
+  },
+  
+  // Quick stats section
+  quickStatsSection: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: -20,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
     color: '#6b7280',
   },
-  infoValue: {
-    flex: 1,
-    fontSize: 14,
+  statDivider: {
+    width: 1,
+    height: 30,
+    backgroundColor: '#e5e7eb',
+  },
+  
+  // Info cards
+  infoCard: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    overflow: 'hidden',
+    borderRadius: 12,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#111827',
   },
-  websiteLink: {
-    flex: 1,
+  viewAllLink: {
     fontSize: 14,
     color: '#2563eb',
   },
-  descriptionContainer: {
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
+  infoContent: {
+    padding: 16,
   },
   description: {
     fontSize: 14,
     lineHeight: 20,
     color: '#4b5563',
+    marginBottom: 16,
+  },
+  detailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  detailItem: {
+    width: '50%',
+    marginBottom: 16,
+    paddingRight: 8,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#111827',
+  },
+  linkValue: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#2563eb',
+  },
+  
+  // Fixtures section
+  fixturesContent: {
+    paddingBottom: 8,
   },
   fixtureHeader: {
     fontSize: 14,
@@ -361,6 +595,8 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     textAlign: 'center',
   },
+  
+  // Achievements section
   achievementsContainer: {
     padding: 16,
   },
@@ -381,6 +617,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#111827',
   },
+  
+  // Social links section
   socialLinksContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
